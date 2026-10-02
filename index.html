@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Comidas">
+<title>Comidas de la semana</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#eff3f1;--cd:#fff;--tx:#1b2622;--mu:#6a7873;--ln:#d9e1dd;--ac:#0f766e;--f1:#0b6b3a;--f1b:#d9f2e3;--f3:#1e5fa8;--f3b:#e0ecfa;--f5:#a85d00;--f5b:#fdeccb;--pp:#7a3ea8;--ppb:#efe2f8;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121816;--cd:#1b2421;--tx:#e8efec;--mu:#93a39d;--ln:#2d3a35;--ac:#4cc2b5;--f1:#7fdca8;--f1b:#173a2a;--f3:#8cbdf0;--f3b:#1c3150;--f5:#f1b765;--f5b:#46330f;--pp:#d0a8f0;--ppb:#3a2650}}
+:root[data-theme="dark"]{--bg:#121816;--cd:#1b2421;--tx:#e8efec;--mu:#93a39d;--ln:#2d3a35;--ac:#4cc2b5;--f1:#7fdca8;--f1b:#173a2a;--f3:#8cbdf0;--f3b:#1c3150;--f5:#f1b765;--f5b:#46330f;--pp:#d0a8f0;--ppb:#3a2650}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 14px 96px}
+h1{font-size:28px;margin:18px 0 10px}h3{margin:0 0 10px}h4{margin:18px 0 6px;font-size:17px;display:flex;justify-content:space-between;align-items:center}
+.mu{color:var(--mu);font-size:14px}.c{text-align:center;margin-top:40px}
+button{font:inherit;padding:10px 14px;border:1px solid var(--ln);border-radius:10px;background:var(--cd);color:var(--tx)}
+.sm{padding:6px 10px;font-size:14px}
+.pri{background:var(--ac);color:var(--bg);border-color:var(--ac);width:100%;margin-top:14px}
+.on{background:var(--ac);color:var(--bg);border-color:var(--ac)}
+input,select{font:inherit;width:100%;padding:10px;border:1px solid var(--ln);border-radius:10px;background:var(--bg);color:var(--tx)}
+input[type=checkbox]{width:20px;height:20px;flex:none}
+.days{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}.pill{padding:8px 13px;border-radius:20px;flex:none}
+.card{background:var(--cd);border:1px solid var(--ln);border-radius:12px;padding:12px 14px;margin:8px 0}
+.ch{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;margin:2px 4px 0 0}
+.f1{background:var(--f1b);color:var(--f1)}.f3{background:var(--f3b);color:var(--f3)}.f5{background:var(--f5b);color:var(--f5)}.pp{background:var(--ppb);color:var(--pp)}
+.row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--ln)}.g{flex:1}
+.dn .g{opacity:.45;text-decoration:line-through}
+.pk{margin-top:4px;padding:6px 8px;font-size:14px}.bar{display:flex;gap:8px;margin:8px 0}.bar .pri{flex:1;margin:0;width:auto}
+.seg{display:flex;gap:6px}.seg button{flex:1;padding:10px 6px}
+.lb{font-size:14px;color:var(--mu);margin:14px 0 6px}
+.chk{display:flex;gap:10px;align-items:center;padding:6px 0}
+.add{display:flex;gap:6px;margin-bottom:6px}.add input{flex:2}.add select{flex:1.4}
+.ov{position:fixed;inset:0;background:#0008;display:flex;align-items:flex-end;z-index:9}
+.sheet{background:var(--cd);width:100%;max-height:88%;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--cd);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav button{flex:1;border:0;border-radius:0;background:none;font-size:13px;padding:8px 0}nav button span{display:block;font-size:20px}
+nav button.on{background:none;color:var(--ac);font-weight:700}
+</style></head><body><div id="app"></div>
+<script>
+const SH=["Carnicería","Pollería","Pescadería","Verdulería","Dietética","Supermercado"],DY=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"],ML=["Desayuno","Almuerzo","Merienda","Cena"],K="comidas-v1",app=document.getElementById("app");
+const I=(n,s)=>({n,s}),uid=()=>Math.random().toString(36).slice(2,8);
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let S=null,tab="w",day=0,sh=null,ed=null;
+try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
+if(!S)S={dishes:[
+{id:"d1",name:"Milanesas con ensalada",ings:[I("Pechuga","Pollería"),I("Pan rallado","Supermercado"),I("Huevos","Supermercado"),I("Lechuga","Verdulería"),I("Tomate","Verdulería")]},
+{id:"d2",name:"Merluza al horno con papas",ings:[I("Merluza","Pescadería"),I("Papas","Verdulería"),I("Limón","Verdulería")]},
+{id:"d3",name:"Yogur con granola",ings:[I("Fruta","Verdulería")]},
+{id:"d4",name:"Tostadas con palta",ings:[I("Palta","Verdulería"),I("Huevos","Supermercado")]}],
+preps:[
+{id:"p1",name:"Yogur casero",ings:[I("Leche","Supermercado"),I("Yogur natural (fermento)","Supermercado")]},
+{id:"p2",name:"Granola",ings:[I("Avena","Dietética"),I("Frutos secos","Dietética"),I("Miel","Dietética")]},
+{id:"p3",name:"Pan casero",ings:[I("Harina","Supermercado"),I("Levadura","Supermercado")]}],week:{},have:{},bought:{}};
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+S.pick=S.pick||{};
+for(const k in S.week){const m=S.week[k];if(m.dish!==undefined){m.dishes=m.dish?[m.dish]:[];delete m.dish}}
+if(!S.v){S.v=2;const d3=S.dishes.find(d=>d.id=="d3");d3&&(d3.ings=d3.ings.filter(i=>i.n!="Fruta"));[["d5","Fruta"],["d6","Verdura"]].forEach(([id,n])=>S.dishes.some(d=>d.id==id)||S.dishes.push({id,name:n,ings:[{n,s:"Verdulería",g:1}]}));save()}
+const slot=(d,m)=>S.week[d+"-"+m]||{};
+const E=()=>{const k=sh.d+"-"+sh.m;return S.week[k]||(S.week[k]={t:"",p:3,dishes:[],preps:[],note:""})};
+const PL={1:"Solo yo",3:"Familiar 3",5:"Familiar 5"},pn=id=>(S.preps.find(p=>p.id==id)||{}).name;
+const chips=o=>(o.c5?`<span class="ch f5">Familiar 5${o.c5>1?" ×"+o.c5:""}</span>`:"")+(o.c3?`<span class="ch f3">Familiar 3${o.c3>1?" ×"+o.c3:""}</span>`:"")+(o.c1?`<span class="ch f1">Solo yo${o.c1>1?" ×"+o.c1:""}</span>`:"")+(o.prep?'<span class="ch pp">Meal prep</span>':"");
+function list(){const L={},U=new Set(),A=(n,s)=>{const k=n.toLowerCase()+"|"+s;return L[k]||(L[k]={k,n,s,c1:0,c3:0,c5:0,prep:0})};
+for(const k in S.week){const m=S.week[k];if(m.t!=="home")continue;(m.dishes||[]).forEach(id=>{const d=S.dishes.find(x=>x.id===id);d&&d.ings.forEach(i=>{const o=A(i.n,i.s);if(i.g)o.g=1;m.p==5?o.c5++:m.p==1?o.c1++:o.c3++})});(m.preps||[]).forEach(p=>U.add(p))}
+U.forEach(id=>{const p=S.preps.find(x=>x.id===id);p&&p.ings.forEach(i=>A(i.n,i.s).prep=1)});return Object.values(L)}
+/* Semana */
+const wv=()=>`<div class="days">${DY.map((d,i)=>`<button class="pill ${i==day?"on":""}" onclick="day=${i};R()">${d}</button>`).join("")}</div>`+ML.map((n,m)=>{const x=slot(day,m),dn=(x.dishes||[]).map(id=>(S.dishes.find(d=>d.id===id)||{}).name).filter(Boolean);let b='<span class="mu">Tocá para elegir</span>';
+if(x.t=="home")b=`<b>${dn.length?dn.map(esc).join(" + "):"Sin plato"}</b> <span class="ch f${x.p||3}">${PL[x.p||3]}</span>`+((x.preps||[]).length?`<div class="mu">Meal prep: ${x.preps.map(pn).filter(Boolean).map(esc).join(", ")}</div>`:"");
+if(x.t=="out")b=`🛵 <b>Afuera</b> <span class="mu">${esc(x.note||"")}</span>`;
+return `<div class="card" onclick="sh={d:${day},m:${m}};R()"><div class="mu">${n}</div>${b}</div>`}).join("");
+const shv=()=>{const x=slot(sh.d,sh.m);return `<div class="ov" onclick="if(event.target==this){sh=null;R()}"><div class="sheet"><h3>${DY[sh.d]} · ${ML[sh.m]}</h3>
+<div class="seg">${[["home","🏠 En casa"],["out","🛵 Afuera"],["","Vacío"]].map(([t,l])=>`<button class="${(x.t||"")==t?"on":""}" onclick="setT('${t}')">${l}</button>`).join("")}</div>
+${x.t=="home"?`<div class="lb">Para quién</div><div class="seg">${[1,3,5].map(p=>`<button class="${(x.p||3)==p?"on":""}" onclick="up('p',${p})">${PL[p]}</button>`).join("")}</div>
+<div class="lb">Platos (podés sumar más de uno)</div>${(x.dishes||[]).map(id=>`<div class="row"><div class="g">${esc((S.dishes.find(d=>d.id===id)||{}).name||"")}</div><button class="sm" onclick="rd('${id}')">✕</button></div>`).join("")}<select onchange="ad(this.value)"><option value="">+ Agregar plato…</option>${S.dishes.filter(d=>!(x.dishes||[]).includes(d.id)).map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join("")}</select>
+<div class="lb">Meal prep: tildá lo que usás y se suman sus ingredientes</div>${S.preps.map(p=>`<label class="chk"><input type="checkbox" ${(x.preps||[]).includes(p.id)?"checked":""} onchange="tp('${p.id}')">${esc(p.name)}</label>`).join("")||'<div class="mu">Cargá tus preparaciones en la pestaña Recetas.</div>'}`:""}
+${x.t=="out"?`<div class="lb">Nota (opcional)</div><input value="${esc(x.note||"")}" oninput="up('note',this.value,1)" placeholder="Ej: pizzería, 21 h">`:""}
+<button class="pri" onclick="sh=null;R()">Listo</button></div></div>`};
+function setT(t){if(t=="")delete S.week[sh.d+"-"+sh.m];else E().t=t;save();R()}
+function up(f,v,q){E()[f]=v;save();q||R()}
+function ad(v){if(!v)return;const x=E();x.dishes=x.dishes||[];x.dishes.push(v);save();R()}
+function rd(id){const x=E();x.dishes=(x.dishes||[]).filter(d=>d!=id);save();R()}
+function pk(k,v){S.pick[k]=v.trim();save()}
+function tp(id){const x=E();x.preps=x.preps||[];const i=x.preps.indexOf(id);i<0?x.preps.push(id):x.preps.splice(i,1);save();R()}
+/* Compras */
+function cv(){const L=list(),h=L.filter(o=>S.have[o.k]),b=L.filter(o=>!S.have[o.k]);
+const row=(o,hv)=>`<div class="row ${S.bought[o.k]&&!hv?"dn":""}">${hv?"":`<input type="checkbox" ${S.bought[o.k]?"checked":""} onchange="tg('bought','${o.k}')">`}<div class="g"><span>${esc(o.n)}</span><div>${chips(o)}</div>${o.g?`<input class="pk" placeholder="¿Cuál? Ej: manzana, banana" value="${esc(S.pick[o.k]||"")}" onchange="pk('${o.k}',this.value)">`:""}</div><button class="sm" onclick="tg('have','${o.k}')">${hv?"Volver a la lista":"Ya lo tengo"}</button></div>`;
+if(!L.length)return '<div class="mu c">Todavía no hay nada para comprar. Armá la semana en la pestaña Semana.</div>';
+return `<div class="bar"><button class="sm" onclick="cp()">📋 Copiar lista</button><button class="sm" onclick="nw()">🗑️ Semana nueva</button></div>`+SH.map(s=>{const it=b.filter(o=>o.s==s);return it.length?`<h4>${s}</h4>`+it.map(o=>row(o,0)).join(""):""}).join("")+(h.length?`<h4>Tengo en casa</h4>`+h.map(o=>row(o,1)).join(""):"")}
+function tg(f,k){S[f][k]?delete S[f][k]:S[f][k]=1;save();R()}
+function cp(){const L=list().filter(o=>!S.have[o.k]),t=SH.map(s=>{const it=L.filter(o=>o.s==s);return it.length?"*"+s+"*\n"+it.map(o=>"• "+o.n+(S.pick[o.k]?": "+S.pick[o.k]:"")+" ("+[o.c5&&"Fam 5"+(o.c5>1?" x"+o.c5:""),o.c3&&"Fam 3"+(o.c3>1?" x"+o.c3:""),o.c1&&"Solo yo"+(o.c1>1?" x"+o.c1:""),o.prep&&"meal prep"].filter(Boolean).join(", ")+")").join("\n"):""}).filter(Boolean).join("\n\n");
+try{navigator.clipboard.writeText(t).then(()=>alert("Lista copiada"),()=>prompt("Copiá la lista:",t))}catch(e){prompt("Copiá la lista:",t)}}
+function nw(){if(confirm("¿Empezar una semana nueva? Se borran la semana y las marcas de compras.")){S.week={};S.have={};S.bought={};S.pick={};save();R()}}
+/* Recetas */
+const rv=()=>[["dishes","Platos"],["preps","Meal prep"]].map(([k,t])=>`<h4>${t}<button class="sm" onclick="ne('${k}')">+ Nuevo</button></h4>`+(S[k].map(x=>`<div class="card"><b>${esc(x.name)}</b><div class="mu">${x.ings.map(i=>esc(i.n)).join(", ")||"Sin ingredientes"}</div><div class="bar"><button class="sm" onclick="ee('${k}','${x.id}')">Editar</button><button class="sm" onclick="de('${k}','${x.id}')">Borrar</button></div></div>`).join("")||'<div class="mu">Todavía no hay ninguno.</div>')).join("");
+const ne=k=>{ed={k,id:"",name:"",ings:[],s:SH[0]};R()};
+const ee=(k,id)=>{const x=S[k].find(y=>y.id==id);ed={k,id,name:x.name,ings:x.ings.map(i=>({...i})),s:SH[0]};R()};
+const de=(k,id)=>{if(confirm("¿Borrar?")){S[k]=S[k].filter(x=>x.id!=id);save();R()}};
+const ev=()=>`<div class="ov"><div class="sheet"><h3>${ed.k=="dishes"?"Plato":"Meal prep"}</h3><input value="${esc(ed.name)}" oninput="ed.name=this.value" placeholder="Nombre">
+<div class="lb">Ingredientes (sin cantidades) y dónde se compran</div><div class="add"><input id="in" placeholder="Ingrediente" onkeydown="if(event.key=='Enter')ai()"><select onchange="ed.s=this.value">${SH.map(s=>`<option ${s==ed.s?"selected":""}>${s}</option>`).join("")}</select><button class="sm" onclick="ai()">+</button></div><label class="chk mu"><input type="checkbox" ${ed.g?"checked":""} onchange="ed.g=this.checked?1:0">A elegir después (ej: fruta, verdura)</label>
+${ed.ings.map((i,n)=>`<div class="row"><div class="g">${esc(i.n)} <span class="mu">${i.s}${i.g?" · a elegir":""}</span></div><button class="sm" onclick="ri(${n})">✕</button></div>`).join("")}
+<div class="bar"><button onclick="ed=null;R()">Cancelar</button><button class="pri" onclick="sv2()">Guardar</button></div></div></div>`;
+function ai(){const n=document.getElementById("in").value.replace(/["'`\\|<>]/g,"").trim();if(!n)return;ed.ings.push({n,s:ed.s,g:ed.g?1:0});ed.g=0;R();document.getElementById("in").focus()}
+const ri=n=>{ed.ings.splice(n,1);R()};
+function sv2(){const n=ed.name.trim();if(!n){alert("Poné un nombre");return}const o={id:ed.id||uid(),name:n,ings:ed.ings},a=S[ed.k],i=a.findIndex(x=>x.id==o.id);i<0?a.push(o):a[i]=o;save();ed=null;R()}
+function R(){app.innerHTML=`<h1>${{w:"Semana",c:"Compras",r:"Recetas"}[tab]}</h1>`+(tab=="w"?wv():tab=="c"?cv():rv())+(sh?shv():"")+(ed?ev():"")+`<nav>${[["w","🗓️","Semana"],["c","🛒","Compras"],["r","📖","Recetas"]].map(([k,i,l])=>`<button class="${tab==k?"on":""}" onclick="tab='${k}';R()"><span>${i}</span>${l}</button>`).join("")}</nav>`}
+R();
+</script></body></html>
