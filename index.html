@@ -18,7 +18,7 @@ button{font:inherit;padding:10px 14px;border:1px solid var(--ln);border-radius:1
 .on{background:var(--ac);color:var(--bg);border-color:var(--ac)}
 input,select{font:inherit;width:100%;padding:10px;border:1px solid var(--ln);border-radius:10px;background:var(--bg);color:var(--tx)}
 input[type=checkbox]{width:20px;height:20px;flex:none}
-.days{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}.pill{padding:8px 13px;border-radius:20px;flex:none}
+.gr{display:grid;grid-template-columns:28px repeat(7,1fr);gap:4px;align-items:center;margin:12px 0}.gr b{text-align:center;font-size:12px}.ml{text-align:center;font-size:18px}.cl{padding:0;height:56px;font-size:18px;font-weight:700;border-radius:10px;border:1px dashed var(--ln)}.cl.f1,.cl.f3,.cl.f5,.cl.pp{border:1px solid transparent}.br button{font-size:13px;padding:10px 2px}.br button.sel{outline:3px solid var(--ac);outline-offset:1px;font-weight:700}
 .card{background:var(--cd);border:1px solid var(--ln);border-radius:12px;padding:12px 14px;margin:8px 0}
 .ch{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;margin:2px 4px 0 0}
 .f1{background:var(--f1b);color:var(--f1)}.f3{background:var(--f3b);color:var(--f3)}.f5{background:var(--f5b);color:var(--f5)}.pp{background:var(--ppb);color:var(--pp)}
@@ -39,7 +39,7 @@ nav button.on{background:none;color:var(--ac);font-weight:700}
 const SH=["Carnicería","Pollería","Pescadería","Verdulería","Dietética","Supermercado"],DY=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"],ML=["Desayuno","Almuerzo","Merienda","Cena"],K="comidas-v1",app=document.getElementById("app");
 const I=(n,s)=>({n,s}),uid=()=>Math.random().toString(36).slice(2,8);
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let S=null,tab="w",day=0,sh=null,ed=null;
+let S=null,tab="w",ed=null;
 try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
 if(!S)S={dishes:[
 {id:"d1",name:"Milanesas con ensalada",ings:[I("Pechuga","Pollería"),I("Pan rallado","Supermercado"),I("Huevos","Supermercado"),I("Lechuga","Verdulería"),I("Tomate","Verdulería")]},
@@ -51,55 +51,74 @@ preps:[
 {id:"p2",name:"Granola",ings:[I("Avena","Dietética"),I("Frutos secos","Dietética"),I("Miel","Dietética")]},
 {id:"p3",name:"Pan casero",ings:[I("Harina","Supermercado"),I("Levadura","Supermercado")]}],week:{},have:{},bought:{}};
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
-S.pick=S.pick||{};
+S.pick=S.pick||{};S.pool=S.pool||{};
 for(const k in S.week){const m=S.week[k];if(m.dish!==undefined){m.dishes=m.dish?[m.dish]:[];delete m.dish}}
 if(!S.v){S.v=2;const d3=S.dishes.find(d=>d.id=="d3");d3&&(d3.ings=d3.ings.filter(i=>i.n!="Fruta"));[["d5","Fruta"],["d6","Verdura"]].forEach(([id,n])=>S.dishes.some(d=>d.id==id)||S.dishes.push({id,name:n,ings:[{n,s:"Verdulería",g:1}]}));save()}
+if(S.v<3){S.v=3;const T={d1:[["3","5"],[1,3]],d2:[["3","5"],[1,3]],d3:[["1"],[0,2]],d4:[["1"],[0,2]]};S.dishes.forEach(d=>{const t=T[d.id];t&&!d.w&&(d.w=t[0],d.m=t[1])});save()}
 const slot=(d,m)=>S.week[d+"-"+m]||{};
-const E=()=>{const k=sh.d+"-"+sh.m;return S.week[k]||(S.week[k]={t:"",p:3,dishes:[],preps:[],note:""})};
-const PL={1:"Solo yo",3:"Familiar 3",5:"Familiar 5"},pn=id=>(S.preps.find(p=>p.id==id)||{}).name;
+for(const k in S.week){const m=S.week[k];if(m.t=="home")m.t=String(m.p||3)}
+const TC={"1":"f1","3":"f3","5":"f5",out:"pp"},TL={"1":"Solo yo","3":"Familiar 3","5":"Familiar 5",out:"Afuera"},TS={"1":"1","3":"3","5":"5",out:"🛵"},MI=["☕","🍽️","🧃","🌙"];
+let br="1",st="1";
 const chips=o=>(o.c5?`<span class="ch f5">Familiar 5${o.c5>1?" ×"+o.c5:""}</span>`:"")+(o.c3?`<span class="ch f3">Familiar 3${o.c3>1?" ×"+o.c3:""}</span>`:"")+(o.c1?`<span class="ch f1">Solo yo${o.c1>1?" ×"+o.c1:""}</span>`:"")+(o.prep?'<span class="ch pp">Meal prep</span>':"");
+const np=m=>m.t=="out"?(m.o=="take"?1:0):+m.t;
 function list(){const L={},U=new Set(),A=(n,s)=>{const k=n.toLowerCase()+"|"+s;return L[k]||(L[k]={k,n,s,c1:0,c3:0,c5:0,prep:0})};
-for(const k in S.week){const m=S.week[k];if(m.t!=="home")continue;(m.dishes||[]).forEach(id=>{const d=S.dishes.find(x=>x.id===id);d&&d.ings.forEach(i=>{const o=A(i.n,i.s);if(i.g)o.g=1;m.p==5?o.c5++:m.p==1?o.c1++:o.c3++})});(m.preps||[]).forEach(p=>U.add(p))}
+for(const k in S.week){const m=S.week[k],p=np(m);if(!p)continue;(m.dishes||[]).forEach(id=>{const d=S.dishes.find(x=>x.id===id);d&&d.ings.forEach(i=>{const o=A(i.n,i.s);if(i.g)o.g=1;p==5?o.c5++:p==1?o.c1++:o.c3++})});(m.preps||[]).forEach(p=>U.add(p))}
 U.forEach(id=>{const p=S.preps.find(x=>x.id===id);p&&p.ings.forEach(i=>A(i.n,i.s).prep=1)});return Object.values(L)}
-/* Semana */
-const wv=()=>`<div class="days">${DY.map((d,i)=>`<button class="pill ${i==day?"on":""}" onclick="day=${i};R()">${d}</button>`).join("")}</div>`+ML.map((n,m)=>{const x=slot(day,m),dn=(x.dishes||[]).map(id=>(S.dishes.find(d=>d.id===id)||{}).name).filter(Boolean);let b='<span class="mu">Tocá para elegir</span>';
-if(x.t=="home")b=`<b>${dn.length?dn.map(esc).join(" + "):"Sin plato"}</b> <span class="ch f${x.p||3}">${PL[x.p||3]}</span>`+((x.preps||[]).length?`<div class="mu">Meal prep: ${x.preps.map(pn).filter(Boolean).map(esc).join(", ")}</div>`:"");
-if(x.t=="out")b=`🛵 <b>Afuera</b> <span class="mu">${esc(x.note||"")}</span>`;
-return `<div class="card" onclick="sh={d:${day},m:${m}};R()"><div class="mu">${n}</div>${b}</div>`}).join("");
-const shv=()=>{const x=slot(sh.d,sh.m);return `<div class="ov" onclick="if(event.target==this){sh=null;R()}"><div class="sheet"><h3>${DY[sh.d]} · ${ML[sh.m]}</h3>
-<div class="seg">${[["home","🏠 En casa"],["out","🛵 Afuera"],["","Vacío"]].map(([t,l])=>`<button class="${(x.t||"")==t?"on":""}" onclick="setT('${t}')">${l}</button>`).join("")}</div>
-${x.t=="home"?`<div class="lb">Para quién</div><div class="seg">${[1,3,5].map(p=>`<button class="${(x.p||3)==p?"on":""}" onclick="up('p',${p})">${PL[p]}</button>`).join("")}</div>
-<div class="lb">Platos (podés sumar más de uno)</div>${(x.dishes||[]).map(id=>`<div class="row"><div class="g">${esc((S.dishes.find(d=>d.id===id)||{}).name||"")}</div><button class="sm" onclick="rd('${id}')">✕</button></div>`).join("")}<select onchange="ad(this.value)"><option value="">+ Agregar plato…</option>${S.dishes.filter(d=>!(x.dishes||[]).includes(d.id)).map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join("")}</select>
-<div class="lb">Meal prep: tildá lo que usás y se suman sus ingredientes</div>${S.preps.map(p=>`<label class="chk"><input type="checkbox" ${(x.preps||[]).includes(p.id)?"checked":""} onchange="tp('${p.id}')">${esc(p.name)}</label>`).join("")||'<div class="mu">Cargá tus preparaciones en la pestaña Recetas.</div>'}`:""}
-${x.t=="out"?`<div class="lb">Nota (opcional)</div><input value="${esc(x.note||"")}" oninput="up('note',this.value,1)" placeholder="Ej: pizzería, 21 h">`:""}
-<button class="pri" onclick="sh=null;R()">Listo</button></div></div>`};
-function setT(t){if(t=="")delete S.week[sh.d+"-"+sh.m];else E().t=t;save();R()}
-function up(f,v,q){E()[f]=v;save();q||R()}
-function ad(v){if(!v)return;const x=E();x.dishes=x.dishes||[];x.dishes.push(v);save();R()}
-function rd(id){const x=E();x.dishes=(x.dishes||[]).filter(d=>d!=id);save();R()}
-function pk(k,v){S.pick[k]=v.trim();save()}
-function tp(id){const x=E();x.preps=x.preps||[];const i=x.preps.indexOf(id);i<0?x.preps.push(id):x.preps.splice(i,1);save();R()}
+/* Semana: vista de toda la semana */
+const wv=()=>`<div class="lb">1) Elegí un tipo · 2) tocá las casillas (tocá de nuevo para vaciar)</div><div class="seg br">${Object.keys(TL).map(t=>`<button class="${TC[t]} ${br==t?"sel":""}" onclick="br='${t}';R()">${TL[t]}</button>`).join("")}</div>
+<div class="gr"><span></span>${DY.map(d=>`<b class="mu">${d}</b>`).join("")}${ML.map((n,m)=>`<span class="ml" title="${n}">${MI[m]}</span>`+DY.map((_,d)=>{const t=slot(d,m).t;return `<button class="cl ${t?TC[t]:""}" onclick="pt(${d},${m})">${t?TS[t]:""}</button>`}).join("")).join("")}</div>
+<div>${Object.keys(TL).map(t=>`<span class="ch ${TC[t]}">${TL[t]}: ${Object.values(S.week).filter(x=>x.t==t).length}</span>`).join("")}</div>
+<div class="mu" style="margin-top:6px">☕ Desayuno · 🍽️ Almuerzo · 🧃 Merienda · 🌙 Cena</div>
+<button class="pri" onclick="tab='d';st='1';R()">Definir las comidas →</button>${S.prev?`<button style="width:100%;margin-top:8px" onclick="rep()">↺ Repetir semana pasada</button>`:""}`;
+function pt(d,m){const k=d+"-"+m,x=S.week[k];if(x&&x.t==br)delete S.week[k];else{const y=S.week[k]=x||{dishes:[],preps:[]};y.t=br;if(br=="out")y.o=y.o||"buy"}save();R()}
+/* Definir: por tipo y momento */
+const TG={"1":"Solo yo","3":"Familiar 3","5":"Familiar 5",out:"Para llevar"};
+const ks=t=>Object.keys(S.week).filter(x=>S.week[x].t==t).sort((a,b)=>{const[p,q]=a.split("-"),[r,s]=b.split("-");return p-r||q-s});
+const mt=(d,t,m)=>(!(d.w||[]).length||d.w.includes(t))&&(!(d.m||[]).length||d.m.includes(+m));
+const elig=k=>{const m=S.week[k];return m.t!="out"||m.o=="take"};
+const shf=a=>{a=a.slice();for(let i=a.length;i>1;){const j=Math.random()*i|0;i--;[a[i],a[j]]=[a[j],a[i]]}return a};
+const rw=(k,f,id)=>`<div class="row"><div class="g">${esc((S[f].find(x=>x.id===id)||{}).name||"")}</div>${f=="dishes"&&(S.pool[S.week[k].t+"-"+k.split("-")[1]]||[]).length>1?`<button class="sm" onclick="rr('${k}')">🎲</button>`:""}<button class="sm" onclick="ar('${k}','${f}','${id}')">✕</button></div>`;
+const dd=(k,m)=>{const c=m.dishes||[],mi=k.split("-")[1];return c.map(id=>rw(k,"dishes",id)).join("")+`<select onchange="ar('${k}','dishes',this.value)"><option value="">${c.length?"+ Sumar otro plato…":"Elegir plato…"}</option>${[...S.dishes].filter(d=>!c.includes(d.id)).sort((x,y)=>mt(y,m.t,mi)-mt(x,m.t,mi)).map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join("")}</select>`};
+const pr=(k,m)=>{const c=m.preps||[];return `<details${c.length?" open":""}><summary class="mu">Meal prep${c.length?" ("+c.length+")":""}</summary>`+c.map(id=>rw(k,"preps",id)).join("")+`<select onchange="ar('${k}','preps',this.value)"><option value="">+ Agregar…</option>${S.preps.filter(x=>!c.includes(x.id)).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select></details>`};
+const sc=k=>{const d=k.split("-")[0],m=S.week[k];return `<div class="card"><b>${DY[d]}</b>`+(m.t=="out"?`<div class="seg" style="margin:8px 0">${[["buy","🛍️ Compra"],["take","🥡 Para llevar"]].map(([v,l])=>`<button class="${(m.o||"buy")==v?"on":""}" onclick="so('${k}','${v}')">${l}</button>`).join("")}</div><input value="${esc(m.note||"")}" oninput="sn('${k}',this.value)" placeholder="Nota (ej: pizzería, vianda)">`:"")+(elig(k)?dd(k,m)+pr(k,m):"")+`</div>`};
+const dv=()=>{const K=ks(st),nx={"1":"3","3":"5","5":"out"}[st];
+const bl=[0,1,2,3].map(m=>{const Z=K.filter(k=>k.split("-")[1]==m);if(!Z.length)return"";const N=Z.filter(elig).length,pl=S.pool[st+"-"+m]||[],C=S.dishes.filter(d=>mt(d,st,m));
+return `<h4>${MI[m]} ${ML[m]} <span class="mu">${Z.length} casilla${Z.length>1?"s":""}</span></h4>`+(N?`<div class="card"><div class="mu">Elegí los que quieras: se reparten solos en ${N} casilla${N>1?"s":""}.</div><div class="bar" style="flex-wrap:wrap">${C.map(d=>`<button class="sm ${pl.includes(d.id)?"on":""}" onclick="tpl('${st}-${m}','${d.id}')">${esc(d.name)}</button>`).join("")||'<span class="mu">Todavía no hay recetas.</span>'}<button class="sm" onclick="nd('${st}',${m})">＋ Nueva receta</button></div><div class="bar"><button class="sm" onclick="fill('${st}',${m},0)">🎲 Completar vacías</button><button class="sm" onclick="fill('${st}',${m},1)">Re-sortear todas</button></div></div>`:"")+Z.map(sc).join("")}).join("");
+return `<div class="seg br">${Object.keys(TL).map(t=>`<button class="${TC[t]} ${st==t?"sel":""}" onclick="st='${t}';R()">${TL[t]} (${ks(t).length})</button>`).join("")}</div>`+(K.length?bl:`<div class="mu c">No marcaste comidas "${TL[st]}" en la Semana.</div>`)+(nx?`<button class="pri" onclick="st='${nx}';R();scrollTo(0,0)">Siguiente: ${TL[nx]} →</button>`:`<button class="pri" onclick="tab='c';R()">Ver compras 🛒</button>`)};
+const tpl=(k,id)=>{const a=S.pool[k]=S.pool[k]||[],i=a.indexOf(id);i<0?a.push(id):a.splice(i,1);save();R()};
+function fill(t,m,o){const pl=S.pool[t+"-"+m]||[];if(!pl.length){alert("Elegí al menos una receta");return}
+const Z=ks(t).filter(k=>k.split("-")[1]==m&&elig(k)&&(o||!(S.week[k].dishes||[]).length));let q=[];while(q.length<Z.length)q=q.concat(shf(pl));Z.forEach((k,i)=>S.week[k].dishes=[q[i]]);save();R()}
+function rr(k){const m=S.week[k],pl=(S.pool[m.t+"-"+k.split("-")[1]]||[]).filter(id=>!(m.dishes||[]).includes(id));if(!pl.length)return;m.dishes=[pl[Math.random()*pl.length|0]];save();R()}
+function rep(){if(confirm("¿Cargar la semana pasada? Reemplaza lo que hay ahora.")){S.week=JSON.parse(JSON.stringify(S.prev.week));save();R()}}
+const tgv=()=>`<div class="lb">Es usual para…</div><div class="bar" style="flex-wrap:wrap">${Object.keys(TG).map(t=>`<button class="sm ${ed.w.includes(t)?"on":""}" onclick="te('w','${t}')">${TG[t]}</button>`).join("")}</div><div class="lb">Momento</div><div class="bar" style="flex-wrap:wrap">${ML.map((n,i)=>`<button class="sm ${ed.m.includes(i)?"on":""}" onclick="te('m',${i})">${n}</button>`).join("")}</div><div class="mu">Sin marcar = aparece en todos.</div>`;
+function nd(t,m){ed={k:"dishes",id:"",name:"",ings:[],s:SH[0],w:[t],m:[m],pl:t+"-"+m};R()}
+function te(f,v){const a=ed[f],i=a.indexOf(v);i<0?a.push(v):a.splice(i,1);R()}
+function ar(k,f,id){if(!id)return;const m=S.week[k],a=m[f]=m[f]||[],i=a.indexOf(id);i<0?a.push(id):a.splice(i,1);save();R()}
+function so(k,v){S.week[k].o=v;save();R()}
+function sn(k,v){S.week[k].note=v;save()}
 /* Compras */
 function cv(){const L=list(),h=L.filter(o=>S.have[o.k]),b=L.filter(o=>!S.have[o.k]);
 const row=(o,hv)=>`<div class="row ${S.bought[o.k]&&!hv?"dn":""}">${hv?"":`<input type="checkbox" ${S.bought[o.k]?"checked":""} onchange="tg('bought','${o.k}')">`}<div class="g"><span>${esc(o.n)}</span><div>${chips(o)}</div>${o.g?`<input class="pk" placeholder="¿Cuál? Ej: manzana, banana" value="${esc(S.pick[o.k]||"")}" onchange="pk('${o.k}',this.value)">`:""}</div><button class="sm" onclick="tg('have','${o.k}')">${hv?"Volver a la lista":"Ya lo tengo"}</button></div>`;
 if(!L.length)return '<div class="mu c">Todavía no hay nada para comprar. Armá la semana en la pestaña Semana.</div>';
-return `<div class="bar"><button class="sm" onclick="cp()">📋 Copiar lista</button><button class="sm" onclick="nw()">🗑️ Semana nueva</button></div>`+SH.map(s=>{const it=b.filter(o=>o.s==s);return it.length?`<h4>${s}</h4>`+it.map(o=>row(o,0)).join(""):""}).join("")+(h.length?`<h4>Tengo en casa</h4>`+h.map(o=>row(o,1)).join(""):"")}
+return `<div class="bar"><button class="sm" onclick="wa()">💬 WhatsApp</button><button class="sm" onclick="ml()">✉️ Mail</button></div><div class="bar"><button class="sm" onclick="cp()">📋 Copiar lista</button><button class="sm" onclick="nw()">🗑️ Semana nueva</button></div>`+SH.map(s=>{const it=b.filter(o=>o.s==s);return it.length?`<h4>${s}</h4>`+it.map(o=>row(o,0)).join(""):""}).join("")+(h.length?`<h4>Tengo en casa</h4>`+h.map(o=>row(o,1)).join(""):"")}
 function tg(f,k){S[f][k]?delete S[f][k]:S[f][k]=1;save();R()}
-function cp(){const L=list().filter(o=>!S.have[o.k]),t=SH.map(s=>{const it=L.filter(o=>o.s==s);return it.length?"*"+s+"*\n"+it.map(o=>"• "+o.n+(S.pick[o.k]?": "+S.pick[o.k]:"")+" ("+[o.c5&&"Fam 5"+(o.c5>1?" x"+o.c5:""),o.c3&&"Fam 3"+(o.c3>1?" x"+o.c3:""),o.c1&&"Solo yo"+(o.c1>1?" x"+o.c1:""),o.prep&&"meal prep"].filter(Boolean).join(", ")+")").join("\n"):""}).filter(Boolean).join("\n\n");
-try{navigator.clipboard.writeText(t).then(()=>alert("Lista copiada"),()=>prompt("Copiá la lista:",t))}catch(e){prompt("Copiá la lista:",t)}}
-function nw(){if(confirm("¿Empezar una semana nueva? Se borran la semana y las marcas de compras.")){S.week={};S.have={};S.bought={};S.pick={};save();R()}}
+function tx(){const L=list().filter(o=>!S.have[o.k]),t=SH.map(s=>{const it=L.filter(o=>o.s==s);return it.length?"*"+s+"*\n"+it.map(o=>"• "+o.n+(S.pick[o.k]?": "+S.pick[o.k]:"")+" ("+[o.c5&&"Fam 5"+(o.c5>1?" x"+o.c5:""),o.c3&&"Fam 3"+(o.c3>1?" x"+o.c3:""),o.c1&&"Solo yo"+(o.c1>1?" x"+o.c1:""),o.prep&&"meal prep"].filter(Boolean).join(", ")+")").join("\n"):""}).filter(Boolean).join("\n\n");return t}
+function cp(){const t=tx();try{navigator.clipboard.writeText(t).then(()=>alert("Lista copiada"),()=>prompt("Copiá la lista:",t))}catch(e){prompt("Copiá la lista:",t)}}
+function wa(){const t=tx();if(!t){alert("La lista está vacía");return}location.href="https://wa.me/?text="+encodeURIComponent("🛒 Lista de compras\n\n"+t)}
+function ml(){const t=tx();if(!t){alert("La lista está vacía");return}location.href="mailto:?subject="+encodeURIComponent("Lista de compras")+"&body="+encodeURIComponent(t)}
+function nw(){if(confirm("¿Empezar una semana nueva? Se borran la semana y las marcas de compras.")){if(Object.keys(S.week).length)S.prev={week:JSON.parse(JSON.stringify(S.week))};S.week={};S.have={};S.bought={};S.pick={};save();R()}}
 /* Recetas */
-const rv=()=>[["dishes","Platos"],["preps","Meal prep"]].map(([k,t])=>`<h4>${t}<button class="sm" onclick="ne('${k}')">+ Nuevo</button></h4>`+(S[k].map(x=>`<div class="card"><b>${esc(x.name)}</b><div class="mu">${x.ings.map(i=>esc(i.n)).join(", ")||"Sin ingredientes"}</div><div class="bar"><button class="sm" onclick="ee('${k}','${x.id}')">Editar</button><button class="sm" onclick="de('${k}','${x.id}')">Borrar</button></div></div>`).join("")||'<div class="mu">Todavía no hay ninguno.</div>')).join("");
-const ne=k=>{ed={k,id:"",name:"",ings:[],s:SH[0]};R()};
-const ee=(k,id)=>{const x=S[k].find(y=>y.id==id);ed={k,id,name:x.name,ings:x.ings.map(i=>({...i})),s:SH[0]};R()};
+const rv=()=>[["dishes","Platos"],["preps","Meal prep"]].map(([k,t])=>`<h4>${t}<button class="sm" onclick="ne('${k}')">+ Nuevo</button></h4>`+(S[k].map(x=>`<div class="card"><b>${esc(x.name)}</b><div>${(x.w||[]).map(t=>`<span class="ch ${TC[t]}">${TG[t]}</span>`).join("")}<span class="mu"> ${(x.m||[]).map(i=>ML[i]).join(" · ")}</span></div><div class="mu">${x.ings.map(i=>esc(i.n)).join(", ")||"Sin ingredientes"}</div><div class="bar"><button class="sm" onclick="ee('${k}','${x.id}')">Editar</button><button class="sm" onclick="de('${k}','${x.id}')">Borrar</button></div></div>`).join("")||'<div class="mu">Todavía no hay ninguno.</div>')).join("");
+const ne=k=>{ed={k,id:"",name:"",ings:[],s:SH[0],w:[],m:[]};R()};
+const ee=(k,id)=>{const x=S[k].find(y=>y.id==id);ed={k,id,name:x.name,ings:x.ings.map(i=>({...i})),s:SH[0],w:(x.w||[]).slice(),m:(x.m||[]).slice()};R()};
 const de=(k,id)=>{if(confirm("¿Borrar?")){S[k]=S[k].filter(x=>x.id!=id);save();R()}};
-const ev=()=>`<div class="ov"><div class="sheet"><h3>${ed.k=="dishes"?"Plato":"Meal prep"}</h3><input value="${esc(ed.name)}" oninput="ed.name=this.value" placeholder="Nombre">
+const ev=()=>`<div class="ov"><div class="sheet"><h3>${ed.k=="dishes"?"Plato":"Meal prep"}</h3><input value="${esc(ed.name)}" oninput="ed.name=this.value" placeholder="Nombre">${ed.k=="dishes"?tgv():""}
 <div class="lb">Ingredientes (sin cantidades) y dónde se compran</div><div class="add"><input id="in" placeholder="Ingrediente" onkeydown="if(event.key=='Enter')ai()"><select onchange="ed.s=this.value">${SH.map(s=>`<option ${s==ed.s?"selected":""}>${s}</option>`).join("")}</select><button class="sm" onclick="ai()">+</button></div><label class="chk mu"><input type="checkbox" ${ed.g?"checked":""} onchange="ed.g=this.checked?1:0">A elegir después (ej: fruta, verdura)</label>
 ${ed.ings.map((i,n)=>`<div class="row"><div class="g">${esc(i.n)} <span class="mu">${i.s}${i.g?" · a elegir":""}</span></div><button class="sm" onclick="ri(${n})">✕</button></div>`).join("")}
 <div class="bar"><button onclick="ed=null;R()">Cancelar</button><button class="pri" onclick="sv2()">Guardar</button></div></div></div>`;
 function ai(){const n=document.getElementById("in").value.replace(/["'`\\|<>]/g,"").trim();if(!n)return;ed.ings.push({n,s:ed.s,g:ed.g?1:0});ed.g=0;R();document.getElementById("in").focus()}
 const ri=n=>{ed.ings.splice(n,1);R()};
-function sv2(){const n=ed.name.trim();if(!n){alert("Poné un nombre");return}const o={id:ed.id||uid(),name:n,ings:ed.ings},a=S[ed.k],i=a.findIndex(x=>x.id==o.id);i<0?a.push(o):a[i]=o;save();ed=null;R()}
-function R(){app.innerHTML=`<h1>${{w:"Semana",c:"Compras",r:"Recetas"}[tab]}</h1>`+(tab=="w"?wv():tab=="c"?cv():rv())+(sh?shv():"")+(ed?ev():"")+`<nav>${[["w","🗓️","Semana"],["c","🛒","Compras"],["r","📖","Recetas"]].map(([k,i,l])=>`<button class="${tab==k?"on":""}" onclick="tab='${k}';R()"><span>${i}</span>${l}</button>`).join("")}</nav>`}
+function sv2(){const n=ed.name.trim();if(!n){alert("Poné un nombre");return}const o={id:ed.id||uid(),name:n,ings:ed.ings},a=S[ed.k];if(ed.k=="dishes"){o.w=ed.w;o.m=ed.m}const i=a.findIndex(x=>x.id==o.id);i<0?a.push(o):a[i]=o;if(ed.pl){const p=S.pool[ed.pl]=S.pool[ed.pl]||[];p.includes(o.id)||p.push(o.id)}save();ed=null;R()}
+function R(){app.innerHTML=`<h1>${{w:"Semana",d:"Definir",c:"Compras",r:"Recetas"}[tab]}</h1>`+(tab=="w"?wv():tab=="d"?dv():tab=="c"?cv():rv())+(ed?ev():"")+`<nav>${[["w","🗓️","Semana"],["d","✏️","Definir"],["c","🛒","Compras"],["r","📖","Recetas"]].map(([k,i,l])=>`<button class="${tab==k?"on":""}" onclick="tab='${k}';R()"><span>${i}</span>${l}</button>`).join("")}</nav>`}
 R();
 </script></body></html>
